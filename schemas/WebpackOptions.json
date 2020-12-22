@@ -260,6 +260,9 @@
         "import": {
           "$ref": "#/definitions/EntryItem"
         },
+        "layer": {
+          "$ref": "#/definitions/Layer"
+        },
         "library": {
           "$ref": "#/definitions/LibraryOptions"
         },
@@ -304,6 +307,9 @@
           },
           "minItems": 1,
           "uniqueItems": true
+        },
+        "layer": {
+          "$ref": "#/definitions/Layer"
         },
         "library": {
           "$ref": "#/definitions/LibraryOptions"
@@ -864,6 +870,18 @@
           "enum": ["none", "error", "warn", "info", "log", "verbose"]
         }
       }
+    },
+    "Layer": {
+      "description": "Specifies the layer in which modules of this entrypoint are placed.",
+      "anyOf": [
+        {
+          "enum": [null]
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
     },
     "Library": {
       "description": "Make the output files a library, exporting the exports of the entry point.",
@@ -2628,8 +2646,7 @@
           "tsType": "RegExp"
         },
         {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         {
           "type": "object",
@@ -2850,6 +2867,18 @@
               "$ref": "#/definitions/RuleSetConditionOrConditionsAbsolute"
             }
           ]
+        },
+        "issuerLayer": {
+          "description": "Match layer of the issuer of this module (The module pointing to this module).",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/RuleSetConditionOrConditions"
+            }
+          ]
+        },
+        "layer": {
+          "description": "Specifies the layer in which the module should be placed in.",
+          "type": "string"
         },
         "loader": {
           "description": "Shortcut for use.loader.",

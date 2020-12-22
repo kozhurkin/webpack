@@ -1260,6 +1260,23 @@ declare class Compilation {
 		dependency: Dependency,
 		callback: (err?: WebpackError, result?: Module) => void
 	): void;
+	addModuleTree(
+		__0: {
+			/**
+			 * context string path
+			 */
+			context: string;
+			/**
+			 * dependency used to create Module chain
+			 */
+			dependency: Dependency;
+			/**
+			 * additional context info for the root module
+			 */
+			contextInfo?: Partial<ModuleFactoryCreateDataContextInfo>;
+		},
+		callback: (err?: WebpackError, result?: Module) => void
+	): void;
 	addEntry(
 		context: string,
 		entry: Dependency,
@@ -2631,6 +2648,11 @@ declare interface EntryDescription {
 	import: EntryItem;
 
 	/**
+	 * Specifies the layer in which modules of this entrypoint are placed.
+	 */
+	layer?: null | string;
+
+	/**
 	 * Options for library.
 	 */
 	library?: LibraryOptions;
@@ -2669,6 +2691,11 @@ declare interface EntryDescriptionNormalized {
 	 * Module(s) that are loaded upon startup. The last one is exported.
 	 */
 	import?: string[];
+
+	/**
+	 * Specifies the layer in which modules of this entrypoint are placed.
+	 */
+	layer?: null | string;
 
 	/**
 	 * Options for library.
@@ -2715,6 +2742,7 @@ type EntryOptions = { name?: string } & Pick<
 	| "filename"
 	| "chunkLoading"
 	| "dependOn"
+	| "layer"
 	| "library"
 	| "runtime"
 	| "wasmLoading"
@@ -3243,6 +3271,7 @@ declare interface FactorizeModuleOptions {
 	factory: ModuleFactory;
 	dependencies: Dependency[];
 	originModule: null | Module;
+	contextInfo?: Partial<ModuleFactoryCreateDataContextInfo>;
 	context?: string;
 }
 type FakeHook<T> = T & FakeHookMarker;
@@ -3570,6 +3599,7 @@ declare interface HandleModuleCreationOptions {
 	factory: ModuleFactory;
 	dependencies: Dependency[];
 	originModule: null | Module;
+	contextInfo?: Partial<ModuleFactoryCreateDataContextInfo>;
 	context?: string;
 
 	/**
@@ -4940,9 +4970,10 @@ declare interface MinChunkSizePluginOptions {
 	minChunkSize: number;
 }
 declare class Module extends DependenciesBlock {
-	constructor(type: string, context?: string);
+	constructor(type: string, context?: string, layer?: string);
 	type: string;
-	context: string;
+	context: null | string;
+	layer: null | string;
 	needId: boolean;
 	debugId: number;
 	resolveOptions: ResolveOptionsWebpackOptions;
@@ -5090,6 +5121,7 @@ declare interface ModuleFactoryCreateData {
 }
 declare interface ModuleFactoryCreateDataContextInfo {
 	issuer: string;
+	issuerLayer?: null | string;
 	compiler: string;
 }
 declare interface ModuleFactoryResult {
@@ -5681,6 +5713,10 @@ declare class NodeTemplatePlugin {
 type NodeWebpackOptions = false | NodeOptions;
 declare class NormalModule extends Module {
 	constructor(__0: {
+		/**
+		 * an optional layer in which the module is
+		 */
+		layer?: string;
 		/**
 		 * module type
 		 */
@@ -7981,6 +8017,34 @@ declare interface RuleSetRule {
 		  }
 		| ((value: string) => boolean)
 		| RuleSetConditionAbsolute[];
+
+	/**
+	 * Match layer of the issuer of this module (The module pointing to this module).
+	 */
+	issuerLayer?:
+		| string
+		| RegExp
+		| {
+				/**
+				 * Logical AND.
+				 */
+				and?: RuleSetCondition[];
+				/**
+				 * Logical NOT.
+				 */
+				not?: RuleSetCondition[];
+				/**
+				 * Logical OR.
+				 */
+				or?: RuleSetCondition[];
+		  }
+		| ((value: string) => boolean)
+		| RuleSetCondition[];
+
+	/**
+	 * Specifies the layer in which the module should be placed in.
+	 */
+	layer?: string;
 
 	/**
 	 * Shortcut for use.loader.

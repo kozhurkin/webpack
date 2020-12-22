@@ -75,6 +75,10 @@ export type Filename =
 			assetInfo?: import("../lib/Compilation").AssetInfo
 	  ) => string);
 /**
+ * Specifies the layer in which modules of this entrypoint are placed.
+ */
+export type Layer = null | string;
+/**
  * Add a comment in the UMD wrapper.
  */
 export type AuxiliaryComment = string | LibraryCustomUmdCommentObject;
@@ -893,6 +897,10 @@ export interface EntryDescription {
 	 */
 	import: EntryItem;
 	/**
+	 * Specifies the layer in which modules of this entrypoint are placed.
+	 */
+	layer?: Layer;
+	/**
 	 * Options for library.
 	 */
 	library?: LibraryOptions;
@@ -1162,6 +1170,14 @@ export interface RuleSetRule {
 	 * Match the issuer of the module (The module pointing to this module).
 	 */
 	issuer?: RuleSetConditionOrConditionsAbsolute;
+	/**
+	 * Match layer of the issuer of this module (The module pointing to this module).
+	 */
+	issuerLayer?: RuleSetConditionOrConditions;
+	/**
+	 * Specifies the layer in which the module should be placed in.
+	 */
+	layer?: string;
 	/**
 	 * Shortcut for use.loader.
 	 */
@@ -2353,6 +2369,10 @@ export interface EntryDescriptionNormalized {
 	 * Module(s) that are loaded upon startup. The last one is exported.
 	 */
 	import?: string[];
+	/**
+	 * Specifies the layer in which modules of this entrypoint are placed.
+	 */
+	layer?: Layer;
 	/**
 	 * Options for library.
 	 */
