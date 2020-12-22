@@ -3407,6 +3407,10 @@
           "description": "Group modules by their extension.",
           "type": "boolean"
         },
+        "groupModulesByLayer": {
+          "description": "Group modules by their layer.",
+          "type": "boolean"
+        },
         "groupModulesByPath": {
           "description": "Group modules by their path.",
           "type": "boolean"

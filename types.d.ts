@@ -4541,6 +4541,7 @@ declare interface KnownNormalizedStatsOptions {
 	dependentModules: boolean;
 	runtimeModules: boolean;
 	groupModulesByCacheStatus: boolean;
+	groupModulesByLayer: boolean;
 	groupModulesByAttributes: boolean;
 	groupModulesByPath: boolean;
 	groupModulesByExtension: boolean;
@@ -9513,6 +9514,11 @@ declare interface StatsOptions {
 	 * Group modules by their extension.
 	 */
 	groupModulesByExtension?: boolean;
+
+	/**
+	 * Group modules by their layer.
+	 */
+	groupModulesByLayer?: boolean;
 
 	/**
 	 * Group modules by their path.

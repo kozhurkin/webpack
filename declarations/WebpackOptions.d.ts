@@ -2204,6 +2204,10 @@ export interface StatsOptions {
 	 */
 	groupModulesByExtension?: boolean;
 	/**
+	 * Group modules by their layer.
+	 */
+	groupModulesByLayer?: boolean;
+	/**
 	 * Group modules by their path.
 	 */
 	groupModulesByPath?: boolean;
