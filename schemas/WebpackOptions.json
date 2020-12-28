@@ -14,7 +14,7 @@
       ]
     },
     "AssetModuleFilename": {
-      "description": "The filename of asset modules as relative path inside the `output.path` directory.",
+      "description": "The filename of asset modules as relative path inside the 'output.path' directory.",
       "anyOf": [
         {
           "type": "string",
@@ -74,16 +74,10 @@
       "type": "boolean"
     },
     "ChunkFilename": {
-      "description": "The filename of non-initial chunks as relative path inside the `output.path` directory.",
-      "anyOf": [
+      "description": "Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.",
+      "oneOf": [
         {
-          "type": "string",
-          "absolutePath": false,
-          "minLength": 1
-        },
-        {
-          "instanceof": "Function",
-          "tsType": "((pathData: import(\"../lib/Compilation\").PathData, assetInfo?: import(\"../lib/Compilation\").AssetInfo) => string)"
+          "$ref": "#/definitions/FilenameTemplate"
         }
       ]
     },
@@ -91,7 +85,18 @@
       "description": "The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).",
       "anyOf": [
         {
-          "enum": ["array-push", "commonjs", false]
+          "enum": [false]
+        },
+        {
+          "$ref": "#/definitions/ChunkFormatType"
+        }
+      ]
+    },
+    "ChunkFormatType": {
+      "description": "The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).",
+      "anyOf": [
+        {
+          "enum": ["array-push", "commonjs"]
         },
         {
           "type": "string"
@@ -193,6 +198,13 @@
       "description": "Module namespace to use when interpolating filename template string for the sources array in a generated SourceMap. Defaults to `output.library` if not set. It's useful for avoiding runtime collisions in sourcemaps from multiple webpack projects built as libraries.",
       "type": "string"
     },
+    "EnabledChunkFormatTypes": {
+      "description": "List of chunk format types enabled for use by entry points.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ChunkFormatType"
+      }
+    },
     "EnabledChunkLoadingTypes": {
       "description": "List of chunk loading types enabled for use by entry points.",
       "type": "array",
@@ -230,8 +242,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "chunkFilename": {
+          "$ref": "#/definitions/ChunkFilename"
+        },
+        "chunkFormat": {
+          "$ref": "#/definitions/ChunkFormatType"
+        },
         "chunkLoading": {
-          "$ref": "#/definitions/ChunkLoading"
+          "$ref": "#/definitions/ChunkLoadingType"
         },
         "dependOn": {
           "description": "The entrypoints that the current entrypoint depend on. They must be loaded when this entrypoint is loaded.",
@@ -255,10 +273,13 @@
           ]
         },
         "filename": {
-          "$ref": "#/definitions/Filename"
+          "$ref": "#/definitions/EntryFilename"
         },
         "import": {
           "$ref": "#/definitions/EntryItem"
+        },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
         },
         "layer": {
           "$ref": "#/definitions/Layer"
@@ -268,6 +289,9 @@
         },
         "runtime": {
           "$ref": "#/definitions/EntryRuntime"
+        },
+        "runtimeName": {
+          "$ref": "#/definitions/EntryRuntimeName"
         },
         "wasmLoading": {
           "$ref": "#/definitions/WasmLoading"
@@ -280,8 +304,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "chunkFilename": {
+          "$ref": "#/definitions/ChunkFilename"
+        },
+        "chunkFormat": {
+          "$ref": "#/definitions/ChunkFormatType"
+        },
         "chunkLoading": {
-          "$ref": "#/definitions/ChunkLoading"
+          "$ref": "#/definitions/ChunkLoadingType"
         },
         "dependOn": {
           "description": "The entrypoints that the current entrypoint depend on. They must be loaded when this entrypoint is loaded.",
@@ -295,7 +325,7 @@
           "uniqueItems": true
         },
         "filename": {
-          "$ref": "#/definitions/Filename"
+          "$ref": "#/definitions/EntryFilename"
         },
         "import": {
           "description": "Module(s) that are loaded upon startup. The last one is exported.",
@@ -308,6 +338,9 @@
           "minItems": 1,
           "uniqueItems": true
         },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
+        },
         "layer": {
           "$ref": "#/definitions/Layer"
         },
@@ -316,6 +349,9 @@
         },
         "runtime": {
           "$ref": "#/definitions/EntryRuntime"
+        },
+        "runtimeName": {
+          "$ref": "#/definitions/EntryRuntimeName"
         },
         "wasmLoading": {
           "$ref": "#/definitions/WasmLoading"
@@ -331,6 +367,14 @@
       "description": "A Function returning a Promise resolving to a normalized entry.",
       "instanceof": "Function",
       "tsType": "(() => Promise<EntryStaticNormalized>)"
+    },
+    "EntryFilename": {
+      "description": "Specifies the filename of the output file on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/FilenameTemplate"
+        }
+      ]
     },
     "EntryItem": {
       "description": "Module(s) that are loaded upon startup.",
@@ -381,6 +425,11 @@
     },
     "EntryRuntime": {
       "description": "The name of the runtime chunk. If set a runtime chunk with this name is created or an existing entrypoint is used as runtime.",
+      "type": "string",
+      "minLength": 1
+    },
+    "EntryRuntimeName": {
+      "description": "The name of the runtime that the entry will be associated to. Optimization for modules will be done per runtime.",
       "type": "string",
       "minLength": 1
     },
@@ -463,6 +512,10 @@
           "description": "Support WebAssembly as asynchronous EcmaScript Module.",
           "type": "boolean"
         },
+        "layers": {
+          "description": "Enable module and chunk layers.",
+          "type": "boolean"
+        },
         "outputModule": {
           "description": "Allow output javascript files as module source type.",
           "type": "boolean"
@@ -515,12 +568,21 @@
                 "type": "object"
               }
             ]
+          },
+          "properties": {
+            "byLayer": {
+              "description": "Specify externals depending on the layer.",
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/ExternalItem"
+              }
+            }
           }
         },
         {
           "description": "The function is called on each dependency (`function(context, request, callback(err, result))`).",
           "instanceof": "Function",
-          "tsType": "((data: { context: string, request: string }, callback: (err?: Error, result?: string) => void) => void)"
+          "tsType": "((data: { context: string, request: string, contextInfo: import('../lib/ModuleFactory').ModuleFactoryCreateDataContextInfo }, callback: (err?: Error, result?: string) => void) => void)"
         }
       ]
     },
@@ -683,7 +745,15 @@
       "required": ["type"]
     },
     "Filename": {
-      "description": "Specifies the name of each output file on disk. You must **not** specify an absolute path here! The `output.path` option determines the location on disk the files are written to, filename is used solely for naming the individual files.",
+      "description": "Specifies the filename of output files on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/FilenameTemplate"
+        }
+      ]
+    },
+    "FilenameTemplate": {
+      "description": "Specifies the filename template of output files on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.",
       "anyOf": [
         {
           "type": "string",
@@ -783,7 +853,7 @@
       "type": "string"
     },
     "HotUpdateMainFilename": {
-      "description": "The filename of the Hot Update Main File. It is inside the `output.path` directory.",
+      "description": "The filename of the Hot Update Main File. It is inside the 'output.path' directory.",
       "type": "string",
       "absolutePath": false
     },
@@ -870,6 +940,14 @@
           "enum": ["none", "error", "warn", "info", "log", "verbose"]
         }
       }
+    },
+    "InitialChunkFilename": {
+      "description": "Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/FilenameTemplate"
+        }
+      ]
     },
     "Layer": {
       "description": "Specifies the layer in which modules of this entrypoint are placed.",
@@ -1502,6 +1580,22 @@
           "description": "Sets the hint for chunk id.",
           "type": "string"
         },
+        "layer": {
+          "description": "Assign modules to a cache group by module layer.",
+          "anyOf": [
+            {
+              "instanceof": "RegExp",
+              "tsType": "RegExp"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "instanceof": "Function",
+              "tsType": "Function"
+            }
+          ]
+        },
         "maxAsyncRequests": {
           "description": "Maximum number of requests which are accepted for on-demand loading.",
           "type": "number",
@@ -1919,6 +2013,9 @@
         "devtoolNamespace": {
           "$ref": "#/definitions/DevtoolNamespace"
         },
+        "enabledChunkFormatTypes": {
+          "$ref": "#/definitions/EnabledChunkFormatTypes"
+        },
         "enabledChunkLoadingTypes": {
           "$ref": "#/definitions/EnabledChunkLoadingTypes"
         },
@@ -1966,6 +2063,9 @@
         },
         "importMetaName": {
           "$ref": "#/definitions/ImportMetaName"
+        },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
         },
         "library": {
           "$ref": "#/definitions/Library"
@@ -2086,6 +2186,9 @@
         "devtoolNamespace": {
           "$ref": "#/definitions/DevtoolNamespace"
         },
+        "enabledChunkFormatTypes": {
+          "$ref": "#/definitions/EnabledChunkFormatTypes"
+        },
         "enabledChunkLoadingTypes": {
           "$ref": "#/definitions/EnabledChunkLoadingTypes"
         },
@@ -2133,6 +2236,9 @@
         },
         "importMetaName": {
           "$ref": "#/definitions/ImportMetaName"
+        },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
         },
         "library": {
           "$ref": "#/definitions/LibraryOptions"
@@ -3174,7 +3280,7 @@
       }
     },
     "SourceMapFilename": {
-      "description": "The filename of the SourceMaps for the JavaScript files. They are inside the `output.path` directory.",
+      "description": "The filename of the SourceMaps for the JavaScript files. They are inside the 'output.path' directory.",
       "type": "string",
       "absolutePath": false
     },
@@ -3699,7 +3805,7 @@
       }
     },
     "WebassemblyModuleFilename": {
-      "description": "The filename of WebAssembly modules as relative path inside the `output.path` directory.",
+      "description": "The filename of WebAssembly modules as relative path inside the 'output.path' directory.",
       "type": "string",
       "absolutePath": false
     },

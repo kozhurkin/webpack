@@ -562,7 +562,7 @@ declare interface CallbackWebpack<T> {
 }
 type Cell<T> = undefined | T;
 declare class Chunk {
-	constructor(name?: string);
+	constructor(name?: string, options?: ChunkOptions);
 	id: null | string | number;
 	ids: null | (string | number)[];
 	debugId: number;
@@ -582,6 +582,7 @@ declare class Chunk {
 	renderedHash?: string;
 	chunkReason?: string;
 	extraAsync: boolean;
+	options: ChunkOptions;
 	readonly entryModule?: Module;
 	hasEntryModule(): boolean;
 	addModule(module: Module): boolean;
@@ -631,6 +632,7 @@ declare class Chunk {
 		includeDirectChildren?: boolean,
 		filterFn?: (c: Chunk, chunkGraph: ChunkGraph) => boolean
 	): Record<string | number, Record<string, (string | number)[]>>;
+	static EMPTY_CHUNK_OPTIONS: ChunkOptions;
 }
 declare class ChunkGraph {
 	constructor(moduleGraph: ModuleGraph);
@@ -915,6 +917,15 @@ declare class ChunkModuleIdRangePlugin {
 declare interface ChunkModuleMaps {
 	id: Record<string | number, (string | number)[]>;
 	hash: Record<string | number, string>;
+}
+declare interface ChunkOptions {
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+	chunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+	chunkFormat?: string;
 }
 declare interface ChunkPathData {
 	id: string | number;
@@ -1320,7 +1331,7 @@ declare class Compilation {
 	 * This method first looks to see if a name is provided for a new chunk,
 	 * and first looks to see if any named chunks already exist and reuse that chunk instead.
 	 */
-	addChunk(name?: string): Chunk;
+	addChunk(name?: string, options?: ChunkOptions): Chunk;
 	assignDepth(module: Module): void;
 	getDependencyReferencedExports(
 		dependency: Dependency,
@@ -1711,9 +1722,17 @@ declare interface Configuration {
 		| ExternalItem[]
 		| {
 				[index: string]: string | boolean | string[] | { [index: string]: any };
+				/**
+				 * Specify externals depending on the layer.
+				 */
+				byLayer?: { [index: string]: ExternalItem };
 		  }
 		| ((
-				data: { context: string; request: string },
+				data: {
+					context: string;
+					request: string;
+					contextInfo: ModuleFactoryCreateDataContextInfo;
+				},
 				callback: (err?: Error, result?: string) => void
 		  ) => void);
 
@@ -2628,9 +2647,21 @@ declare abstract class EntryDependency extends ModuleDependency {}
  */
 declare interface EntryDescription {
 	/**
+	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	chunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+
+	/**
+	 * The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).
+	 */
+	chunkFormat?: string;
+
+	/**
 	 * The method of loading chunks (methods included by default are 'jsonp' (web), 'importScripts' (WebWorker), 'require' (sync node.js), 'async-node' (async node.js), but others might be added by plugins).
 	 */
-	chunkLoading?: string | false;
+	chunkLoading?: string;
 
 	/**
 	 * The entrypoints that the current entrypoint depend on. They must be loaded when this entrypoint is loaded.
@@ -2638,7 +2669,7 @@ declare interface EntryDescription {
 	dependOn?: string | string[];
 
 	/**
-	 * Specifies the name of each output file on disk. You must **not** specify an absolute path here! The `output.path` option determines the location on disk the files are written to, filename is used solely for naming the individual files.
+	 * Specifies the filename of the output file on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
@@ -2646,6 +2677,13 @@ declare interface EntryDescription {
 	 * Module(s) that are loaded upon startup.
 	 */
 	import: EntryItem;
+
+	/**
+	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
 	/**
 	 * Specifies the layer in which modules of this entrypoint are placed.
@@ -2661,6 +2699,11 @@ declare interface EntryDescription {
 	 * The name of the runtime chunk. If set a runtime chunk with this name is created or an existing entrypoint is used as runtime.
 	 */
 	runtime?: string;
+
+	/**
+	 * The name of the runtime that the entry will be associated to. Optimization for modules will be done per runtime.
+	 */
+	runtimeName?: string;
 
 	/**
 	 * The method of loading WebAssembly Modules (methods included by default are 'fetch' (web/WebWorker), 'async-node' (node.js), but others might be added by plugins).
@@ -2673,9 +2716,21 @@ declare interface EntryDescription {
  */
 declare interface EntryDescriptionNormalized {
 	/**
+	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	chunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+
+	/**
+	 * The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).
+	 */
+	chunkFormat?: string;
+
+	/**
 	 * The method of loading chunks (methods included by default are 'jsonp' (web), 'importScripts' (WebWorker), 'require' (sync node.js), 'async-node' (async node.js), but others might be added by plugins).
 	 */
-	chunkLoading?: string | false;
+	chunkLoading?: string;
 
 	/**
 	 * The entrypoints that the current entrypoint depend on. They must be loaded when this entrypoint is loaded.
@@ -2683,7 +2738,7 @@ declare interface EntryDescriptionNormalized {
 	dependOn?: string[];
 
 	/**
-	 * Specifies the name of each output file on disk. You must **not** specify an absolute path here! The `output.path` option determines the location on disk the files are written to, filename is used solely for naming the individual files.
+	 * Specifies the filename of the output file on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
@@ -2691,6 +2746,13 @@ declare interface EntryDescriptionNormalized {
 	 * Module(s) that are loaded upon startup. The last one is exported.
 	 */
 	import?: string[];
+
+	/**
+	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
 	/**
 	 * Specifies the layer in which modules of this entrypoint are placed.
@@ -2706,6 +2768,11 @@ declare interface EntryDescriptionNormalized {
 	 * The name of the runtime chunk. If set a runtime chunk with this name is created or an existing entrypoint is used as runtime.
 	 */
 	runtime?: string;
+
+	/**
+	 * The name of the runtime that the entry will be associated to. Optimization for modules will be done per runtime.
+	 */
+	runtimeName?: string;
 
 	/**
 	 * The method of loading WebAssembly Modules (methods included by default are 'fetch' (web/WebWorker), 'async-node' (node.js), but others might be added by plugins).
@@ -2724,7 +2791,7 @@ declare interface EntryObject {
 	[index: string]: string | string[] | EntryDescription;
 }
 declare class EntryOptionPlugin {
-	constructor();
+	constructor(__0?: { layers?: boolean });
 	apply(compiler: Compiler): void;
 	static applyEntryOption(
 		compiler: Compiler,
@@ -2740,11 +2807,15 @@ declare class EntryOptionPlugin {
 type EntryOptions = { name?: string } & Pick<
 	EntryDescriptionNormalized,
 	| "filename"
+	| "chunkFilename"
+	| "chunkFormat"
 	| "chunkLoading"
 	| "dependOn"
+	| "initialChunkFilename"
 	| "layer"
 	| "library"
 	| "runtime"
+	| "runtimeName"
 	| "wasmLoading"
 >;
 declare class EntryPlugin {
@@ -2886,6 +2957,11 @@ declare interface Experiments {
 	 * Support WebAssembly as asynchronous EcmaScript Module.
 	 */
 	asyncWebAssembly?: boolean;
+
+	/**
+	 * Enable module and chunk layers.
+	 */
+	layers?: boolean;
 
 	/**
 	 * Allow output javascript files as module source type.
@@ -3162,9 +3238,19 @@ declare interface ExpressionExpressionInfo {
 type ExternalItem =
 	| string
 	| RegExp
-	| { [index: string]: string | boolean | string[] | { [index: string]: any } }
+	| {
+			[index: string]: string | boolean | string[] | { [index: string]: any };
+			/**
+			 * Specify externals depending on the layer.
+			 */
+			byLayer?: { [index: string]: ExternalItem };
+	  }
 	| ((
-			data: { context: string; request: string },
+			data: {
+				context: string;
+				request: string;
+				contextInfo: ModuleFactoryCreateDataContextInfo;
+			},
 			callback: (err?: Error, result?: string) => void
 	  ) => void);
 declare class ExternalModule extends Module {
@@ -3186,9 +3272,19 @@ type Externals =
 	| string
 	| RegExp
 	| ExternalItem[]
-	| { [index: string]: string | boolean | string[] | { [index: string]: any } }
+	| {
+			[index: string]: string | boolean | string[] | { [index: string]: any };
+			/**
+			 * Specify externals depending on the layer.
+			 */
+			byLayer?: { [index: string]: ExternalItem };
+	  }
 	| ((
-			data: { context: string; request: string },
+			data: {
+				context: string;
+				request: string;
+				contextInfo: ModuleFactoryCreateDataContextInfo;
+			},
 			callback: (err?: Error, result?: string) => void
 	  ) => void);
 declare class ExternalsPlugin {
@@ -3662,7 +3758,8 @@ declare class HotModuleReplacementPlugin {
 	static getParserHooks(parser: JavascriptParser): HMRJavascriptParserHooks;
 }
 declare class HotUpdateChunk extends Chunk {
-	constructor();
+	constructor(options?: ChunkOptions);
+	static EMPTY_CHUNK_OPTIONS: ChunkOptions;
 }
 declare class HttpUriPlugin {
 	constructor();
@@ -4064,7 +4161,7 @@ declare class JavascriptParser extends Parser {
 		typeof: HookMap<SyncBailHook<[Expression], boolean | void>>;
 		importCall: SyncBailHook<[Expression], boolean | void>;
 		topLevelAwait: SyncBailHook<[Expression], boolean | void>;
-		call: HookMap<SyncBailHook<[Expression], boolean | void>>;
+		call: HookMap<SyncBailHook<[CallExpression], boolean | void>>;
 		callMemberChain: HookMap<
 			SyncBailHook<[CallExpression, string[]], boolean | void>
 		>;
@@ -6091,6 +6188,11 @@ declare interface OptimizationSplitChunksCacheGroup {
 	idHint?: string;
 
 	/**
+	 * Assign modules to a cache group by module layer.
+	 */
+	layer?: string | Function | RegExp;
+
+	/**
 	 * Maximum number of requests which are accepted for on-demand loading.
 	 */
 	maxAsyncRequests?: number;
@@ -6301,7 +6403,7 @@ declare class OriginalSource extends Source {
  */
 declare interface Output {
 	/**
-	 * The filename of asset modules as relative path inside the `output.path` directory.
+	 * The filename of asset modules as relative path inside the 'output.path' directory.
 	 */
 	assetModuleFilename?:
 		| string
@@ -6318,7 +6420,7 @@ declare interface Output {
 	charset?: boolean;
 
 	/**
-	 * The filename of non-initial chunks as relative path inside the `output.path` directory.
+	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	chunkFilename?:
 		| string
@@ -6370,6 +6472,11 @@ declare interface Output {
 	devtoolNamespace?: string;
 
 	/**
+	 * List of chunk format types enabled for use by entry points.
+	 */
+	enabledChunkFormatTypes?: string[];
+
+	/**
 	 * List of chunk loading types enabled for use by entry points.
 	 */
 	enabledChunkLoadingTypes?: string[];
@@ -6390,7 +6497,7 @@ declare interface Output {
 	environment?: Environment;
 
 	/**
-	 * Specifies the name of each output file on disk. You must **not** specify an absolute path here! The `output.path` option determines the location on disk the files are written to, filename is used solely for naming the individual files.
+	 * Specifies the filename of output files on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
@@ -6430,7 +6537,7 @@ declare interface Output {
 	hotUpdateGlobal?: string;
 
 	/**
-	 * The filename of the Hot Update Main File. It is inside the `output.path` directory.
+	 * The filename of the Hot Update Main File. It is inside the 'output.path' directory.
 	 */
 	hotUpdateMainFilename?: string;
 
@@ -6448,6 +6555,13 @@ declare interface Output {
 	 * The name of the native import.meta object (can be exchanged for a polyfill).
 	 */
 	importMetaName?: string;
+
+	/**
+	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
 	/**
 	 * Make the output files a library, exporting the exports of the entry point.
@@ -6490,7 +6604,7 @@ declare interface Output {
 	scriptType?: false | "module" | "text/javascript";
 
 	/**
-	 * The filename of the SourceMaps for the JavaScript files. They are inside the `output.path` directory.
+	 * The filename of the SourceMaps for the JavaScript files. They are inside the 'output.path' directory.
 	 */
 	sourceMapFilename?: string;
 
@@ -6520,7 +6634,7 @@ declare interface Output {
 	wasmLoading?: string | false;
 
 	/**
-	 * The filename of WebAssembly modules as relative path inside the `output.path` directory.
+	 * The filename of WebAssembly modules as relative path inside the 'output.path' directory.
 	 */
 	webassemblyModuleFilename?: string;
 
@@ -6559,7 +6673,7 @@ declare interface OutputFileSystem {
  */
 declare interface OutputNormalized {
 	/**
-	 * The filename of asset modules as relative path inside the `output.path` directory.
+	 * The filename of asset modules as relative path inside the 'output.path' directory.
 	 */
 	assetModuleFilename?:
 		| string
@@ -6571,7 +6685,7 @@ declare interface OutputNormalized {
 	charset?: boolean;
 
 	/**
-	 * The filename of non-initial chunks as relative path inside the `output.path` directory.
+	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	chunkFilename?:
 		| string
@@ -6623,6 +6737,11 @@ declare interface OutputNormalized {
 	devtoolNamespace?: string;
 
 	/**
+	 * List of chunk format types enabled for use by entry points.
+	 */
+	enabledChunkFormatTypes?: string[];
+
+	/**
 	 * List of chunk loading types enabled for use by entry points.
 	 */
 	enabledChunkLoadingTypes?: string[];
@@ -6643,7 +6762,7 @@ declare interface OutputNormalized {
 	environment?: Environment;
 
 	/**
-	 * Specifies the name of each output file on disk. You must **not** specify an absolute path here! The `output.path` option determines the location on disk the files are written to, filename is used solely for naming the individual files.
+	 * Specifies the filename of output files on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
 	 */
 	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
@@ -6683,7 +6802,7 @@ declare interface OutputNormalized {
 	hotUpdateGlobal?: string;
 
 	/**
-	 * The filename of the Hot Update Main File. It is inside the `output.path` directory.
+	 * The filename of the Hot Update Main File. It is inside the 'output.path' directory.
 	 */
 	hotUpdateMainFilename?: string;
 
@@ -6701,6 +6820,13 @@ declare interface OutputNormalized {
 	 * The name of the native import.meta object (can be exchanged for a polyfill).
 	 */
 	importMetaName?: string;
+
+	/**
+	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
 	/**
 	 * Options for library.
@@ -6733,7 +6859,7 @@ declare interface OutputNormalized {
 	scriptType?: false | "module" | "text/javascript";
 
 	/**
-	 * The filename of the SourceMaps for the JavaScript files. They are inside the `output.path` directory.
+	 * The filename of the SourceMaps for the JavaScript files. They are inside the 'output.path' directory.
 	 */
 	sourceMapFilename?: string;
 
@@ -6758,7 +6884,7 @@ declare interface OutputNormalized {
 	wasmLoading?: string | false;
 
 	/**
-	 * The filename of WebAssembly modules as relative path inside the `output.path` directory.
+	 * The filename of WebAssembly modules as relative path inside the 'output.path' directory.
 	 */
 	webassemblyModuleFilename?: string;
 

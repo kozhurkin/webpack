@@ -281,6 +281,9 @@ describe("Defaults", () => {
 		    "devtoolFallbackModuleFilenameTemplate": undefined,
 		    "devtoolModuleFilenameTemplate": undefined,
 		    "devtoolNamespace": "webpack",
+		    "enabledChunkFormatTypes": Array [
+		      "array-push",
+		    ],
 		    "enabledChunkLoadingTypes": Array [
 		      "jsonp",
 		      "import-scripts",
@@ -310,6 +313,7 @@ describe("Defaults", () => {
 		    "iife": true,
 		    "importFunctionName": "import",
 		    "importMetaName": "import.meta",
+		    "initialChunkFilename": "[name].js",
 		    "library": undefined,
 		    "module": false,
 		    "path": "<cwd>/dist",
@@ -920,6 +924,9 @@ describe("Defaults", () => {
 		@@ ... @@
 		-     "filename": "[name].js",
 		+     "filename": "bundle.js",
+		@@ ... @@
+		-     "initialChunkFilename": "[name].js",
+		+     "initialChunkFilename": "bundle.js",
 	`)
 	);
 	test("function filename", { output: { filename: () => "bundle.js" } }, e =>
@@ -933,6 +940,9 @@ describe("Defaults", () => {
 		@@ ... @@
 		-     "filename": "[name].js",
 		+     "filename": [Function filename],
+		@@ ... @@
+		-     "initialChunkFilename": "[name].js",
+		+     "initialChunkFilename": [Function filename],
 	`)
 	);
 	test("library", { output: { library: ["myLib", "awesome"] } }, e =>
@@ -998,6 +1008,9 @@ describe("Defaults", () => {
 		@@ ... @@
 		-     "chunkLoading": "jsonp",
 		+     "chunkLoading": "require",
+		@@ ... @@
+		-       "array-push",
+		+       "commonjs",
 		@@ ... @@
 		-       "jsonp",
 		-       "import-scripts",
@@ -1133,6 +1146,9 @@ describe("Defaults", () => {
 		-     "chunkLoading": "jsonp",
 		+     "chunkLoading": "require",
 		@@ ... @@
+		-       "array-push",
+		+       "commonjs",
+		@@ ... @@
 		-       "jsonp",
 		-       "import-scripts",
 		+       "require",
@@ -1248,6 +1264,9 @@ describe("Defaults", () => {
 		@@ ... @@
 		-     "chunkLoading": "jsonp",
 		+     "chunkLoading": "require",
+		@@ ... @@
+		-       "array-push",
+		+       "commonjs",
 		@@ ... @@
 		-       "jsonp",
 		-       "import-scripts",
