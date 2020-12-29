@@ -13,6 +13,64 @@
         }
       ]
     },
+    "AssetGeneratorDataUrl": {
+      "description": "The options for data url generator.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/AssetGeneratorDataUrlOptions"
+        },
+        {
+          "$ref": "#/definitions/AssetGeneratorDataUrlFunction"
+        }
+      ]
+    },
+    "AssetGeneratorDataUrlFunction": {
+      "description": "Function that executes for module and should return an DataUrl string.",
+      "instanceof": "Function",
+      "tsType": "((source: string | Buffer, context: { filename: string, module: import('../lib/Module') }) => string)"
+    },
+    "AssetGeneratorDataUrlOptions": {
+      "description": "Options object for data url generation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "description": "Asset encoding (defaults to base64).",
+          "enum": [false, "base64"]
+        },
+        "mimetype": {
+          "description": "Asset mimetype (getting from file extension by default).",
+          "type": "string"
+        }
+      }
+    },
+    "AssetGeneratorOptions": {
+      "description": "Generator options for asset modules.",
+      "type": "object",
+      "implements": [
+        "#/definitions/AssetInlineGeneratorOptions",
+        "#/definitions/AssetResourceGeneratorOptions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "dataUrl": {
+          "$ref": "#/definitions/AssetGeneratorDataUrl"
+        },
+        "filename": {
+          "$ref": "#/definitions/FilenameTemplate"
+        }
+      }
+    },
+    "AssetInlineGeneratorOptions": {
+      "description": "Generator options for asset/inline modules.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dataUrl": {
+          "$ref": "#/definitions/AssetGeneratorDataUrl"
+        }
+      }
+    },
     "AssetModuleFilename": {
       "description": "The filename of asset modules as relative path inside the 'output.path' directory.",
       "anyOf": [
@@ -25,6 +83,50 @@
           "tsType": "((pathData: import(\"../lib/Compilation\").PathData, assetInfo?: import(\"../lib/Compilation\").AssetInfo) => string)"
         }
       ]
+    },
+    "AssetParserDataUrlFunction": {
+      "description": "Function that executes for module and should return whenever asset should be inlined as DataUrl.",
+      "instanceof": "Function",
+      "tsType": "((source: string | Buffer, context: { filename: string, module: import('../lib/Module') }) => boolean)"
+    },
+    "AssetParserDataUrlOptions": {
+      "description": "Options object for DataUrl condition.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxSize": {
+          "description": "Maximum size of asset that should be inline as modules. Default: 8kb.",
+          "type": "number"
+        }
+      }
+    },
+    "AssetParserOptions": {
+      "description": "Parser options for asset modules.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dataUrlCondition": {
+          "description": "The condition for inlining the asset as DataUrl.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AssetParserDataUrlOptions"
+            },
+            {
+              "$ref": "#/definitions/AssetParserDataUrlFunction"
+            }
+          ]
+        }
+      }
+    },
+    "AssetResourceGeneratorOptions": {
+      "description": "Generator options for asset/resource modules.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "$ref": "#/definitions/FilenameTemplate"
+        }
+      }
     },
     "AuxiliaryComment": {
       "description": "Add a comment in the UMD wrapper.",
@@ -198,6 +300,16 @@
       "description": "Module namespace to use when interpolating filename template string for the sources array in a generated SourceMap. Defaults to `output.library` if not set. It's useful for avoiding runtime collisions in sourcemaps from multiple webpack projects built as libraries.",
       "type": "string"
     },
+    "EmptyGeneratorOptions": {
+      "description": "No generator options are supported for this module type.",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "EmptyParserOptions": {
+      "description": "No parser options are supported for this module type.",
+      "type": "object",
+      "additionalProperties": false
+    },
     "EnabledChunkFormatTypes": {
       "description": "List of chunk format types enabled for use by entry points.",
       "type": "array",
@@ -240,6 +352,7 @@
     "EntryDescription": {
       "description": "An object with entry point description.",
       "type": "object",
+      "implements": "#/definitions/EntryDescriptionOptions",
       "additionalProperties": false,
       "properties": {
         "chunkFilename": {
@@ -299,6 +412,49 @@
       },
       "required": ["import"]
     },
+    "EntryDescriptionNamed": {
+      "description": "An object with entry point description.",
+      "type": "object",
+      "implements": "#/definitions/EntryDescriptionOptions",
+      "additionalProperties": false,
+      "properties": {
+        "chunkFilename": {
+          "$ref": "#/definitions/ChunkFilename"
+        },
+        "chunkFormat": {
+          "$ref": "#/definitions/ChunkFormatType"
+        },
+        "chunkLoading": {
+          "$ref": "#/definitions/ChunkLoadingType"
+        },
+        "filename": {
+          "$ref": "#/definitions/EntryFilename"
+        },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
+        },
+        "layer": {
+          "$ref": "#/definitions/Layer"
+        },
+        "library": {
+          "$ref": "#/definitions/LibraryOptions"
+        },
+        "name": {
+          "description": "Name of this entrypoint.",
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime": {
+          "$ref": "#/definitions/EntryRuntime"
+        },
+        "runtimeName": {
+          "$ref": "#/definitions/EntryRuntimeName"
+        },
+        "wasmLoading": {
+          "$ref": "#/definitions/WasmLoading"
+        }
+      }
+    },
     "EntryDescriptionNormalized": {
       "description": "An object with entry point description.",
       "type": "object",
@@ -337,6 +493,43 @@
           },
           "minItems": 1,
           "uniqueItems": true
+        },
+        "initialChunkFilename": {
+          "$ref": "#/definitions/InitialChunkFilename"
+        },
+        "layer": {
+          "$ref": "#/definitions/Layer"
+        },
+        "library": {
+          "$ref": "#/definitions/LibraryOptions"
+        },
+        "runtime": {
+          "$ref": "#/definitions/EntryRuntime"
+        },
+        "runtimeName": {
+          "$ref": "#/definitions/EntryRuntimeName"
+        },
+        "wasmLoading": {
+          "$ref": "#/definitions/WasmLoading"
+        }
+      }
+    },
+    "EntryDescriptionOptions": {
+      "description": "An object with entry point description.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "chunkFilename": {
+          "$ref": "#/definitions/ChunkFilename"
+        },
+        "chunkFormat": {
+          "$ref": "#/definitions/ChunkFormatType"
+        },
+        "chunkLoading": {
+          "$ref": "#/definitions/ChunkLoadingType"
+        },
+        "filename": {
+          "$ref": "#/definitions/EntryFilename"
         },
         "initialChunkFilename": {
           "$ref": "#/definitions/InitialChunkFilename"
@@ -949,6 +1142,127 @@
         }
       ]
     },
+    "JavascriptParserAsyncEntryDescription": {
+      "description": "Options for any async entrypoint.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dependencyType": {
+          "description": "Specify the dependency type of the request that is used for resolving.",
+          "type": "string"
+        },
+        "entryOptions": {
+          "$ref": "#/definitions/EntryDescriptionNamed"
+        },
+        "request": {
+          "description": "Specify the request to reference a module.",
+          "type": "string"
+        },
+        "return": {
+          "description": "Specify the returned value (void: returns undefined, files: returns an array of filenames, urls: returns an array of URLs).",
+          "enum": ["void", "files", "urls"]
+        },
+        "value": {
+          "description": "Any JSON value that should be returned.",
+          "tsType": "any"
+        }
+      }
+    },
+    "JavascriptParserOptions": {
+      "description": "Parser options for javascript modules.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "amd": {
+          "$ref": "#/definitions/Amd"
+        },
+        "browserify": {
+          "description": "Enable/disable special handling for browserify bundles.",
+          "type": "boolean"
+        },
+        "commonjs": {
+          "description": "Enable/disable parsing of CommonJs syntax.",
+          "type": "boolean"
+        },
+        "entries": {
+          "description": "Disable or configure handling of async entrypoints specified in source code.",
+          "anyOf": [
+            {
+              "enum": [false]
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "description": "Specify behavior of this async entrypoint.",
+                "anyOf": [
+                  {
+                    "enum": [false]
+                  },
+                  {
+                    "instanceof": "Function",
+                    "tsType": "((info: { expression: import('estree').Expression }, ...args: any[]) => false | JavascriptParserAsyncEntryDescription)"
+                  },
+                  {
+                    "$ref": "#/definitions/JavascriptParserAsyncEntryDescription"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "harmony": {
+          "description": "Enable/disable parsing of EcmaScript Modules syntax.",
+          "type": "boolean"
+        },
+        "import": {
+          "description": "Enable/disable parsing of import() syntax.",
+          "type": "boolean"
+        },
+        "node": {
+          "$ref": "#/definitions/Node"
+        },
+        "requireContext": {
+          "description": "Enable/disable parsing of require.context syntax.",
+          "type": "boolean"
+        },
+        "requireEnsure": {
+          "description": "Enable/disable parsing of require.ensure syntax.",
+          "type": "boolean"
+        },
+        "requireInclude": {
+          "description": "Enable/disable parsing of require.include syntax.",
+          "type": "boolean"
+        },
+        "requireJs": {
+          "description": "Enable/disable parsing of require.js special syntax like require.config, requirejs.config, require.version and requirejs.onError.",
+          "type": "boolean"
+        },
+        "system": {
+          "description": "Enable/disable parsing of System.js special syntax like System.import, System.get, System.set and System.register.",
+          "type": "boolean"
+        },
+        "url": {
+          "description": "Enable/disable parsing of new URL() syntax.",
+          "type": "boolean"
+        },
+        "worker": {
+          "description": "Disable or configure parsing of WebWorker syntax like new Worker() or navigator.serviceWorker.register().",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "description": "Specify a syntax that should be parsed as WebWorker reference. 'Abc' handles 'new Abc()', 'Abc from xyz' handles 'import { Abc } from \"xyz\"; new Abc()', 'abc()' handles 'abc()', and combinations are also possible.",
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
     "Layer": {
       "description": "Specifies the layer in which modules of this entrypoint are placed.",
       "anyOf": [
@@ -1177,6 +1491,38 @@
           "description": "Set the default request for full dynamic dependencies.",
           "type": "string"
         },
+        "generator": {
+          "description": "Specify options for each generator.",
+          "type": "object",
+          "additionalProperties": {
+            "description": "Options for generating.",
+            "type": "object",
+            "additionalProperties": true
+          },
+          "properties": {
+            "asset": {
+              "$ref": "#/definitions/AssetGeneratorOptions"
+            },
+            "asset/inline": {
+              "$ref": "#/definitions/AssetInlineGeneratorOptions"
+            },
+            "asset/resource": {
+              "$ref": "#/definitions/AssetResourceGeneratorOptions"
+            },
+            "javascript": {
+              "$ref": "#/definitions/EmptyGeneratorOptions"
+            },
+            "javascript/auto": {
+              "$ref": "#/definitions/EmptyGeneratorOptions"
+            },
+            "javascript/dynamic": {
+              "$ref": "#/definitions/EmptyGeneratorOptions"
+            },
+            "javascript/esm": {
+              "$ref": "#/definitions/EmptyGeneratorOptions"
+            }
+          }
+        },
         "noParse": {
           "description": "Don't parse files matching. It's matched against the full resolved request.",
           "anyOf": [
@@ -1218,6 +1564,41 @@
               "tsType": "Function"
             }
           ]
+        },
+        "parser": {
+          "description": "Specify options for each parser.",
+          "type": "object",
+          "additionalProperties": {
+            "description": "Options for parsing.",
+            "type": "object",
+            "additionalProperties": true
+          },
+          "properties": {
+            "asset": {
+              "$ref": "#/definitions/AssetParserOptions"
+            },
+            "asset/inline": {
+              "$ref": "#/definitions/EmptyParserOptions"
+            },
+            "asset/resource": {
+              "$ref": "#/definitions/EmptyParserOptions"
+            },
+            "asset/source": {
+              "$ref": "#/definitions/EmptyParserOptions"
+            },
+            "javascript": {
+              "$ref": "#/definitions/JavascriptParserOptions"
+            },
+            "javascript/auto": {
+              "$ref": "#/definitions/JavascriptParserOptions"
+            },
+            "javascript/dynamic": {
+              "$ref": "#/definitions/JavascriptParserOptions"
+            },
+            "javascript/esm": {
+              "$ref": "#/definitions/JavascriptParserOptions"
+            }
+          }
         },
         "rules": {
           "description": "An array of rules applied for modules.",

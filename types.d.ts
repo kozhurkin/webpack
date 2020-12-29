@@ -212,12 +212,76 @@ declare interface AssetEmittedInfo {
 	outputPath: string;
 	targetPath: string;
 }
+
+/**
+ * Options object for data url generation.
+ */
+declare interface AssetGeneratorDataUrlOptions {
+	/**
+	 * Asset encoding (defaults to base64).
+	 */
+	encoding?: false | "base64";
+
+	/**
+	 * Asset mimetype (getting from file extension by default).
+	 */
+	mimetype?: string;
+}
+type AssetGeneratorOptions = AssetInlineGeneratorOptions &
+	AssetResourceGeneratorOptions;
 type AssetInfo = KnownAssetInfo & Record<string, any>;
+
+/**
+ * Generator options for asset/inline modules.
+ */
+declare interface AssetInlineGeneratorOptions {
+	/**
+	 * The options for data url generator.
+	 */
+	dataUrl?:
+		| AssetGeneratorDataUrlOptions
+		| ((
+				source: string | Buffer,
+				context: { filename: string; module: Module }
+		  ) => string);
+}
+
+/**
+ * Options object for DataUrl condition.
+ */
+declare interface AssetParserDataUrlOptions {
+	/**
+	 * Maximum size of asset that should be inline as modules. Default: 8kb.
+	 */
+	maxSize?: number;
+}
+
+/**
+ * Parser options for asset modules.
+ */
+declare interface AssetParserOptions {
+	/**
+	 * The condition for inlining the asset as DataUrl.
+	 */
+	dataUrlCondition?:
+		| AssetParserDataUrlOptions
+		| ((
+				source: string | Buffer,
+				context: { filename: string; module: Module }
+		  ) => boolean);
+}
+
+/**
+ * Generator options for asset/resource modules.
+ */
+declare interface AssetResourceGeneratorOptions {
+	/**
+	 * Specifies the filename template of output files on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
+}
 declare abstract class AsyncDependenciesBlock extends DependenciesBlock {
-	groupOptions: {
-		preloadOrder?: number;
-		prefetchOrder?: number;
-		name?: string;
+	groupOptions: RawChunkGroupOptions & { name?: string } & {
 		entryOptions?: EntryOptions;
 	};
 	loc?: SyntheticDependencyLocation | RealDependencyLocation;
@@ -878,12 +942,7 @@ declare abstract class ChunkGroup {
 	getModuleIndex: (module: Module) => number;
 	getModuleIndex2: (module: Module) => number;
 }
-
-declare interface ChunkGroupOptions {
-	preloadOrder?: number;
-	prefetchOrder?: number;
-	name?: string;
-}
+type ChunkGroupOptions = RawChunkGroupOptions & { name?: string };
 declare interface ChunkHashContext {
 	/**
 	 * the runtime template
@@ -1642,25 +1701,7 @@ declare class ConcatenationScope {
 	static isModuleReference(name: string): boolean;
 	static matchModuleReference(
 		name: string
-	): {
-		/**
-		 * the properties/exports of the module
-		 */
-		ids: string[];
-		/**
-		 * true, when this referenced export is called
-		 */
-		call: boolean;
-		/**
-		 * true, when this referenced export is directly imported (not via property access)
-		 */
-		directImport: boolean;
-		/**
-		 * if the position is ASI safe or unknown
-		 */
-		asiSafe?: boolean;
-		index: number;
-	};
+	): ModuleReferenceOptions & { index: number };
 	static DEFAULT_EXPORT: string;
 	static NAMESPACE_OBJECT_EXPORT: string;
 }
@@ -2597,6 +2638,16 @@ declare class ElectronTargetPlugin {
 	 */
 	apply(compiler: Compiler): void;
 }
+
+/**
+ * No generator options are supported for this module type.
+ */
+declare interface EmptyGeneratorOptions {}
+
+/**
+ * No parser options are supported for this module type.
+ */
+declare interface EmptyParserOptions {}
 declare class EnableChunkLoadingPlugin {
 	constructor(type: string);
 	type: string;
@@ -2641,74 +2692,33 @@ declare interface EntryData {
 	options: EntryOptions;
 }
 declare abstract class EntryDependency extends ModuleDependency {}
+type EntryDescription = EntryDescriptionOptions & EntryDescriptionExtra;
 
 /**
  * An object with entry point description.
  */
-declare interface EntryDescription {
-	/**
-	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
-	 */
-	chunkFilename?:
-		| string
-		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
-
-	/**
-	 * The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).
-	 */
-	chunkFormat?: string;
-
-	/**
-	 * The method of loading chunks (methods included by default are 'jsonp' (web), 'importScripts' (WebWorker), 'require' (sync node.js), 'async-node' (async node.js), but others might be added by plugins).
-	 */
-	chunkLoading?: string;
-
+declare interface EntryDescriptionExtra {
 	/**
 	 * The entrypoints that the current entrypoint depend on. They must be loaded when this entrypoint is loaded.
 	 */
 	dependOn?: string | string[];
 
 	/**
-	 * Specifies the filename of the output file on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
-	 */
-	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
-
-	/**
 	 * Module(s) that are loaded upon startup.
 	 */
 	import: EntryItem;
+}
+type EntryDescriptionNamed = EntryDescriptionOptions &
+	EntryDescriptionNamedExtra;
 
+/**
+ * An object with entry point description.
+ */
+declare interface EntryDescriptionNamedExtra {
 	/**
-	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 * Name of this entrypoint.
 	 */
-	initialChunkFilename?:
-		| string
-		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
-
-	/**
-	 * Specifies the layer in which modules of this entrypoint are placed.
-	 */
-	layer?: null | string;
-
-	/**
-	 * Options for library.
-	 */
-	library?: LibraryOptions;
-
-	/**
-	 * The name of the runtime chunk. If set a runtime chunk with this name is created or an existing entrypoint is used as runtime.
-	 */
-	runtime?: string;
-
-	/**
-	 * The name of the runtime that the entry will be associated to. Optimization for modules will be done per runtime.
-	 */
-	runtimeName?: string;
-
-	/**
-	 * The method of loading WebAssembly Modules (methods included by default are 'fetch' (web/WebWorker), 'async-node' (node.js), but others might be added by plugins).
-	 */
-	wasmLoading?: string | false;
+	name?: string;
 }
 
 /**
@@ -2746,6 +2756,65 @@ declare interface EntryDescriptionNormalized {
 	 * Module(s) that are loaded upon startup. The last one is exported.
 	 */
 	import?: string[];
+
+	/**
+	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	initialChunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+
+	/**
+	 * Specifies the layer in which modules of this entrypoint are placed.
+	 */
+	layer?: null | string;
+
+	/**
+	 * Options for library.
+	 */
+	library?: LibraryOptions;
+
+	/**
+	 * The name of the runtime chunk. If set a runtime chunk with this name is created or an existing entrypoint is used as runtime.
+	 */
+	runtime?: string;
+
+	/**
+	 * The name of the runtime that the entry will be associated to. Optimization for modules will be done per runtime.
+	 */
+	runtimeName?: string;
+
+	/**
+	 * The method of loading WebAssembly Modules (methods included by default are 'fetch' (web/WebWorker), 'async-node' (node.js), but others might be added by plugins).
+	 */
+	wasmLoading?: string | false;
+}
+
+/**
+ * An object with entry point description.
+ */
+declare interface EntryDescriptionOptions {
+	/**
+	 * Specifies the filename template of output files of non-initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	chunkFilename?:
+		| string
+		| ((pathData: PathData, assetInfo?: AssetInfo) => string);
+
+	/**
+	 * The format of chunks (formats included by default are 'array-push' (web/WebWorker), 'commonjs' (node.js), but others might be added by plugins).
+	 */
+	chunkFormat?: string;
+
+	/**
+	 * The method of loading chunks (methods included by default are 'jsonp' (web), 'importScripts' (WebWorker), 'require' (sync node.js), 'async-node' (async node.js), but others might be added by plugins).
+	 */
+	chunkLoading?: string;
+
+	/**
+	 * Specifies the filename of the output file on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
+	 */
+	filename?: string | ((pathData: PathData, assetInfo?: AssetInfo) => string);
 
 	/**
 	 * Specifies the filename template of output files of initial chunks on disk. You must **not** specify an absolute path here, but the path may contain folders separated by '/'! The specified path is joined with the value of the 'output.path' option to determine the location on disk.
@@ -4500,6 +4569,123 @@ declare class JavascriptParser extends Parser {
 	static ALLOWED_MEMBER_TYPES_EXPRESSION: 2;
 	static ALLOWED_MEMBER_TYPES_CALL_EXPRESSION: 1;
 }
+
+/**
+ * Options for any async entrypoint.
+ */
+declare interface JavascriptParserAsyncEntryDescription {
+	/**
+	 * Specify the dependency type of the request that is used for resolving.
+	 */
+	dependencyType?: string;
+
+	/**
+	 * An object with entry point description.
+	 */
+	entryOptions?: EntryDescriptionNamed;
+
+	/**
+	 * Specify the request to reference a module.
+	 */
+	request?: string;
+
+	/**
+	 * Specify the returned value (void: returns undefined, files: returns an array of filenames, urls: returns an array of URLs).
+	 */
+	return?: "files" | "void" | "urls";
+
+	/**
+	 * Any JSON value that should be returned.
+	 */
+	value?: any;
+}
+
+/**
+ * Parser options for javascript modules.
+ */
+declare interface JavascriptParserOptions {
+	[index: string]: any;
+
+	/**
+	 * Set the value of `require.amd` and `define.amd`. Or disable AMD support.
+	 */
+	amd?: false | { [index: string]: any };
+
+	/**
+	 * Enable/disable special handling for browserify bundles.
+	 */
+	browserify?: boolean;
+
+	/**
+	 * Enable/disable parsing of CommonJs syntax.
+	 */
+	commonjs?: boolean;
+
+	/**
+	 * Disable or configure handling of async entrypoints specified in source code.
+	 */
+	entries?:
+		| false
+		| {
+				[index: string]:
+					| false
+					| ((
+							info: { expression: Expression },
+							...args: any[]
+					  ) => false | JavascriptParserAsyncEntryDescription)
+					| JavascriptParserAsyncEntryDescription;
+		  };
+
+	/**
+	 * Enable/disable parsing of EcmaScript Modules syntax.
+	 */
+	harmony?: boolean;
+
+	/**
+	 * Enable/disable parsing of import() syntax.
+	 */
+	import?: boolean;
+
+	/**
+	 * Include polyfills or mocks for various node stuff.
+	 */
+	node?: false | NodeOptions;
+
+	/**
+	 * Enable/disable parsing of require.context syntax.
+	 */
+	requireContext?: boolean;
+
+	/**
+	 * Enable/disable parsing of require.ensure syntax.
+	 */
+	requireEnsure?: boolean;
+
+	/**
+	 * Enable/disable parsing of require.include syntax.
+	 */
+	requireInclude?: boolean;
+
+	/**
+	 * Enable/disable parsing of require.js special syntax like require.config, requirejs.config, require.version and requirejs.onError.
+	 */
+	requireJs?: boolean;
+
+	/**
+	 * Enable/disable parsing of System.js special syntax like System.import, System.get, System.set and System.register.
+	 */
+	system?: boolean;
+
+	/**
+	 * Enable/disable parsing of new URL() syntax.
+	 */
+	url?: boolean;
+
+	/**
+	 * Disable or configure parsing of WebWorker syntax like new Worker() or navigator.serviceWorker.register().
+	 */
+	worker?: boolean | string[];
+}
 declare class JsonpChunkLoadingRuntimeModule extends RuntimeModule {
 	constructor(runtimeRequirements?: any);
 	static getCompilationHooks(
@@ -5454,9 +5640,83 @@ declare interface ModuleOptions {
 	exprContextRequest?: string;
 
 	/**
+	 * Specify options for each generator.
+	 */
+	generator?: {
+		[index: string]: { [index: string]: any };
+		/**
+		 * Generator options for asset modules.
+		 */
+		asset?: AssetGeneratorOptions;
+		/**
+		 * Generator options for asset/inline modules.
+		 */
+		"asset/inline"?: AssetInlineGeneratorOptions;
+		/**
+		 * Generator options for asset/resource modules.
+		 */
+		"asset/resource"?: AssetResourceGeneratorOptions;
+		/**
+		 * No generator options are supported for this module type.
+		 */
+		javascript?: EmptyGeneratorOptions;
+		/**
+		 * No generator options are supported for this module type.
+		 */
+		"javascript/auto"?: EmptyGeneratorOptions;
+		/**
+		 * No generator options are supported for this module type.
+		 */
+		"javascript/dynamic"?: EmptyGeneratorOptions;
+		/**
+		 * No generator options are supported for this module type.
+		 */
+		"javascript/esm"?: EmptyGeneratorOptions;
+	};
+
+	/**
 	 * Don't parse files matching. It's matched against the full resolved request.
 	 */
 	noParse?: string | Function | RegExp | (string | Function | RegExp)[];
+
+	/**
+	 * Specify options for each parser.
+	 */
+	parser?: {
+		[index: string]: { [index: string]: any };
+		/**
+		 * Parser options for asset modules.
+		 */
+		asset?: AssetParserOptions;
+		/**
+		 * No parser options are supported for this module type.
+		 */
+		"asset/inline"?: EmptyParserOptions;
+		/**
+		 * No parser options are supported for this module type.
+		 */
+		"asset/resource"?: EmptyParserOptions;
+		/**
+		 * No parser options are supported for this module type.
+		 */
+		"asset/source"?: EmptyParserOptions;
+		/**
+		 * Parser options for javascript modules.
+		 */
+		javascript?: JavascriptParserOptions;
+		/**
+		 * Parser options for javascript modules.
+		 */
+		"javascript/auto"?: JavascriptParserOptions;
+		/**
+		 * Parser options for javascript modules.
+		 */
+		"javascript/dynamic"?: JavascriptParserOptions;
+		/**
+		 * Parser options for javascript modules.
+		 */
+		"javascript/esm"?: JavascriptParserOptions;
+	};
 
 	/**
 	 * An array of rules applied for modules.
@@ -7685,173 +7945,10 @@ declare interface ResolveOptionsWebpackOptions {
 	 */
 	useSyncFileSystemCalls?: boolean;
 }
-
-/**
- * Options object for resolving requests.
- */
-declare interface ResolveOptionsWithDependencyType {
-	/**
-	 * Redirect module requests.
-	 */
-	alias?:
-		| {
-				/**
-				 * New request.
-				 */
-				alias: Target;
-				/**
-				 * Request to be redirected.
-				 */
-				name: string;
-				/**
-				 * Redirect only exact matching request.
-				 */
-				onlyModule?: boolean;
-		  }[]
-		| { [index: string]: Target };
-
-	/**
-	 * Fields in the description file (usually package.json) which are used to redirect requests inside the module.
-	 */
-	aliasFields?: EntryItem[];
-
-	/**
-	 * Extra resolve options per dependency category. Typical categories are "commonjs", "amd", "esm".
-	 */
-	byDependency?: { [index: string]: ResolveOptionsWebpackOptions };
-
-	/**
-	 * Enable caching of successfully resolved requests (cache entries are revalidated).
-	 */
-	cache?: boolean;
-
-	/**
-	 * Predicate function to decide which requests should be cached.
-	 */
-	cachePredicate?: (request: ResolveRequest) => boolean;
-
-	/**
-	 * Include the context information in the cache identifier when caching.
-	 */
-	cacheWithContext?: boolean;
-
-	/**
-	 * Condition names for exports field entry point.
-	 */
-	conditionNames?: string[];
-
-	/**
-	 * Filenames used to find a description file (like a package.json).
-	 */
-	descriptionFiles?: string[];
-
-	/**
-	 * Enforce the resolver to use one of the extensions from the extensions option (User must specify requests without extension).
-	 */
-	enforceExtension?: boolean;
-
-	/**
-	 * Field names from the description file (usually package.json) which are used to provide entry points of a package.
-	 */
-	exportsFields?: string[];
-
-	/**
-	 * Extensions added to the request when trying to find the file.
-	 */
-	extensions?: string[];
-
-	/**
-	 * Redirect module requests when normal resolving fails.
-	 */
-	fallback?:
-		| {
-				/**
-				 * New request.
-				 */
-				alias: Target;
-				/**
-				 * Request to be redirected.
-				 */
-				name: string;
-				/**
-				 * Redirect only exact matching request.
-				 */
-				onlyModule?: boolean;
-		  }[]
-		| { [index: string]: Target };
-
-	/**
-	 * Filesystem for the resolver.
-	 */
-	fileSystem?: InputFileSystem;
-
-	/**
-	 * Treats the request specified by the user as fully specified, meaning no extensions are added and the mainFiles in directories are not resolved (This doesn't affect requests from mainFields, aliasFields or aliases).
-	 */
-	fullySpecified?: boolean;
-
-	/**
-	 * Field names from the description file (usually package.json) which are used to provide internal request of a package (requests starting with # are considered as internal).
-	 */
-	importsFields?: string[];
-
-	/**
-	 * Field names from the description file (package.json) which are used to find the default entry point.
-	 */
-	mainFields?: EntryItem[];
-
-	/**
-	 * Filenames used to find the default entry point if there is no description file or main field.
-	 */
-	mainFiles?: string[];
-
-	/**
-	 * Folder names or directory paths where to find modules.
-	 */
-	modules?: string[];
-
-	/**
-	 * Plugins for the resolver.
-	 */
-	plugins?: ("..." | ResolvePluginInstance)[];
-
-	/**
-	 * Prefer to resolve module requests as relative request and fallback to resolving as module.
-	 */
-	preferRelative?: boolean;
-
-	/**
-	 * Custom resolver.
-	 */
-	resolver?: Resolver;
-
-	/**
-	 * A list of resolve restrictions. Resolve results must fulfill all of these restrictions to resolve successfully. Other resolve paths are taken when restrictions are not met.
-	 */
-	restrictions?: (string | RegExp)[];
-
-	/**
-	 * A list of directories in which requests that are server-relative URLs (starting with '/') are resolved. On non-windows system these requests are tried to resolve as absolute path first.
-	 */
-	roots?: string[];
-
-	/**
-	 * Enable resolving symlinks to the original location.
-	 */
-	symlinks?: boolean;
-
-	/**
-	 * Enable caching of successfully resolved requests (cache entries are not revalidated).
-	 */
-	unsafeCache?: boolean | { [index: string]: any };
-
-	/**
-	 * Use synchronous filesystem calls for the resolver.
-	 */
-	useSyncFileSystemCalls?: boolean;
+type ResolveOptionsWithDependencyType = ResolveOptionsWebpackOptions & {
 	dependencyType?: string;
 	resolveToContext?: boolean;
-}
+};
 
 /**
  * Plugin instance.

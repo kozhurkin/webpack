@@ -7,7 +7,7 @@
 /**
  * Function that executes for module and should return an DataUrl string.
  */
-export type DataUrlFunction = (
+export type AssetGeneratorDataUrlFunction = (
 	source: string | Buffer,
 	context: {filename: string; module: import("../../lib/Module")}
 ) => string;
@@ -16,7 +16,7 @@ export interface AssetModulesPluginGeneratorOptions {
 	/**
 	 * The options for data url generator.
 	 */
-	dataUrl?: DataUrlOptions | DataUrlFunction;
+	dataUrl?: AssetGeneratorDataUrlOptions | AssetGeneratorDataUrlFunction;
 	/**
 	 * Template for asset filename.
 	 */
@@ -30,7 +30,7 @@ export interface AssetModulesPluginGeneratorOptions {
 /**
  * Options object for data url generation.
  */
-export interface DataUrlOptions {
+export interface AssetGeneratorDataUrlOptions {
 	/**
 	 * Asset encoding (defaults to base64).
 	 */

@@ -21,59 +21,49 @@ module.exports = {
 		enabledChunkFormatTypes: ["...", "array-push"]
 	},
 	module: {
-		rules: [
-			{
-				test: /\.[cm]?js$/,
-				parser: {
-					entries: {
-						CLIENT: {
-							entryOptions: {
-								name: "client",
-								layer: "client",
-								chunkLoading: "jsonp",
-								chunkFormat: "array-push",
-								initialChunkFilename: "client/[name].js",
-								chunkFilename: "client/[name].js"
-							},
-							return: "files"
+		parser: {
+			javascript: {
+				entries: {
+					CLIENT: {
+						entryOptions: {
+							name: "client",
+							layer: "client",
+							chunkLoading: "jsonp",
+							chunkFormat: "array-push",
+							initialChunkFilename: "client/[name].js",
+							chunkFilename: "client/[name].js"
 						},
-						CLIENT_MODERN: {
-							entryOptions: {
-								name: "modern",
-								layer: "modern",
-								chunkLoading: "jsonp",
-								chunkFormat: "array-push",
-								initialChunkFilename: "client/modern-[name].js",
-								chunkFilename: "client/modern-[name].js"
-							},
-							return: "files"
-						}
-					}
-				}
-			},
-			{
-				test: /\.[cm]?js$/,
-				parser: {
-					entries: {
-						API: (info, request, name) => ({
-							entryOptions: {
-								name: `api/${name}`,
-								layer: "server",
-								chunkLayer: "server",
-								chunkLoading: "require",
-								chunkFormat: "commonjs",
-								runtime: "api-runtime",
-								library: {
-									type: "commonjs-module",
-									export: "default"
-								}
-							},
-							value: `/${name}`
-						})
-					}
+						return: "files"
+					},
+					CLIENT_MODERN: {
+						entryOptions: {
+							name: "modern",
+							layer: "modern",
+							chunkLoading: "jsonp",
+							chunkFormat: "array-push",
+							initialChunkFilename: "client/modern-[name].js",
+							chunkFilename: "client/modern-[name].js"
+						},
+						return: "files"
+					},
+					API: (info, request, name) => ({
+						entryOptions: {
+							name: `api/${name}`,
+							layer: "server",
+							chunkLayer: "server",
+							chunkLoading: "require",
+							chunkFormat: "commonjs",
+							runtime: "api-runtime",
+							library: {
+								type: "commonjs-module",
+								export: "default"
+							}
+						},
+						value: `/${name}`
+					})
 				}
 			}
-		]
+		}
 	},
 	optimization: {
 		splitChunks: {
@@ -867,7 +857,7 @@ chunk (runtime: api-runtime) merged.js (merged) (id hint: merge) [chunk format c
 chunk (runtime: page) page.js (page) 509 bytes (javascript) 675 bytes (runtime) [entry] [rendered]
   > ./page.js page
   runtime modules 675 bytes 3 modules
-  ./page.js + 1 modules 509 bytes [built] [code generated]
+  ./page.js + 1 modules (in server) 509 bytes [built] [code generated]
     [exports: default]
     [all exports used]
     entry ./page.js page
